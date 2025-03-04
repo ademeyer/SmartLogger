@@ -25,7 +25,7 @@ int main()
         }
     };
 
-    auto sr = SafeRecorder::getInstance("app_log.txt");
+    auto sr = SafeRecorder::getInstance();
     // create many workerThread
     std::vector<std::thread> threads;
     for(int k = 0; k < 10; k++)
@@ -39,6 +39,19 @@ int main()
         t.join();
     }
 
-    std::cout << "***************************************** End Test Saferecorder *****************************************\n";
+    std::cout << "***************************************** End Test Saferecorder *****************************************\n\n";
+    
+    
+    std::cout << "******************************************* Test Smartlogger *******************************************\n";
+    SmartLogger sm;
+    SmartLogger<int> logger2;
+    int num = 7;
+    sm.Info("This is Info");
+    sm.Debug("This is Debug");
+    sm.Warn("This is Warn");
+    sm.Error("This is Error");
+    sm.Fatal("This is Fatal");
+    std::cout << "***************************************** End Test Smartlogger *****************************************\n\n";
+    
     return 0;
 }
