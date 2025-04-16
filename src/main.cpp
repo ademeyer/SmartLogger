@@ -4,33 +4,29 @@
 #include <chrono>
 #include <sstream>
 #include "smartlogger.h"
-#include "saferecorder.h"
 
-// Initialize static members
-std::unique_ptr<SafeRecorder> SafeRecorder::mInstance;
-std::mutex SafeRecorder::mLogMutex;
 
 int main()
 {
-    std::cout << "******************************************* Test Saferecorder *******************************************\n";
-    auto workerThread = [](SafeRecorder& logger, int threadID)
+    
+    std::cout << "******************************************* Test Smartlogger *******************************************\n";
+    auto workerThread = [](int threadID)
     {
-        for(int i = 0; i < 5; i++)
-        {
-            std::ostringstream logMessage;
-            logMessage << "Thread " << threadID << " -log entry " << i;
-            logger.log(logMessage.str());
-            // wait for 100ms before logging next message
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        }
+        SmartLogger logger;
+        std::ostringstream logMessage;
+        logMessage << "Thread Logger ID: " << threadID << " -This is a Test ";
+        logger.Info(logMessage.str(), "Info ", 0);
+        logger.Debug(logMessage.str(), "Debug ", 1);
+        logger.Warn(logMessage.str(), "Warn ", 2);
+        logger.Error(logMessage.str(), "Error ", 3);
+        logger.Fatal(logMessage.str(), "Fatal ", 4);
     };
 
-    auto sr = SafeRecorder::getInstance();
     // create many workerThread
     std::vector<std::thread> threads;
-    for(int k = 0; k < 10; k++)
+    for(int k = 0; k < 10000; k++)
     {
-        threads.emplace_back(workerThread, std::ref(*sr), k+1);
+        threads.emplace_back(workerThread, k+1);
     }
 
     // wait for thread to finish
@@ -39,19 +35,7 @@ int main()
         t.join();
     }
 
-    std::cout << "***************************************** End Test Saferecorder *****************************************\n\n";
-    
-    
-    std::cout << "******************************************* Test Smartlogger *******************************************\n";
-    SmartLogger sm;
-    SmartLogger<int> logger2;
-    int num = 7;
-    sm.Info("This is Info");
-    sm.Debug("This is Debug");
-    sm.Warn("This is Warn");
-    sm.Error("This is Error");
-    sm.Fatal("This is Fatal");
     std::cout << "***************************************** End Test Smartlogger *****************************************\n\n";
-    
+
     return 0;
 }
