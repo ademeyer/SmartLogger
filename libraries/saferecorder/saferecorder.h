@@ -1,12 +1,12 @@
-#pragma once
+#ifndef __SAFERECORDER_H_
+#define __SAFERECORDER_H_
 #include <thread>
 #include <mutex>
 #include <fstream>
-#include <chrono>
 #include <iomanip>
 #include <memory>
 
-#define FileName "app_log.txt"
+#define FileName "../../../app_log.txt"
 class SafeRecorder {
 public:
     ~SafeRecorder();
@@ -33,3 +33,5 @@ private:
     std::ofstream mLogFile;
     
 };
+
+#endif
