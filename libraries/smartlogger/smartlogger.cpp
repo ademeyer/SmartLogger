@@ -2,7 +2,7 @@
 #pragma warning(disable : 4996)
 #include "smartlogger.h"
 
-const std::string SmartLogger::updatePrintSetting(const LogLevel &ll)
+const std::string SmartLogger::updatePrintColor(const LogLevel &ll) const
 {
   std::ostringstream logMessage;
   if (ll >= LogLevel::RESET)
@@ -13,45 +13,68 @@ const std::string SmartLogger::updatePrintSetting(const LogLevel &ll)
   {
     auto log = mLogSettings[static_cast<int>(ll)];
     logMessage << "\033[1;" << std::to_string(log.color) << "m";
-    logMessage << "[" << log.logLevelName << "]" << getDateAndTime() << ": ";
   }
   return logMessage.str();
 }
 
-std::string SmartLogger::getDateAndTime()
+std::string SmartLogger::getLogName(const LogLevel &ll) const
+{
+  std::ostringstream logName;
+  auto log = mLogSettings[static_cast<int>(ll)];
+  logName << "[" << log.logLevelName << "]";
+  return logName.str();
+}
+
+std::string SmartLogger::getDateAndTime() const
 {
   auto t_now = std::chrono::system_clock::now();
   auto time_now = std::chrono::system_clock::to_time_t(t_now);
   std::ostringstream timestr;
-  timestr << "[";
-  timestr << std::put_time(std::localtime(&time_now), "%Y-%m-%d %H:%M:%S");
-  timestr << "]";
-
+  timestr << "[" << std::put_time(std::localtime(&time_now), "%Y-%m-%d %H:%M:%S") << "]:\t";
   return timestr.str();
 }
 
 template <typename... Args>
 void SmartLogger::printHelper(const LogLevel &loglevel, Args &&...args)
 {
+  // Take mutex
+  std::lock_guard<std::mutex> lock(mLogMutex);
   std::string fmt;
   constexpr int argLen = sizeof...(args);
   for (int i = 0; i < argLen; ++i)
     fmt += "{}";
+
+  std::string plainLog;
+  plainLog = getLogName(loglevel) + getDateAndTime() +
+             std::vformat(fmt, std::make_format_args(args...));
+
   std::ostringstream data;
-  data << updatePrintSetting(loglevel) << std::vformat(fmt, std::make_format_args(args...))
-       << updatePrintSetting(LogLevel::RESET) << "\n";
+  data << updatePrintColor(loglevel)
+       << plainLog
+       << updatePrintColor(LogLevel::RESET)
+       << std::endl;
 
   std::cout << data.str();
 
-  recordLogsIfNeeded(data.str());
+  try
+  {
+    recordLogsIfNeeded(plainLog);
+  }
+  catch (const std::exception &e)
+  {
+    std::cerr << e.what() << '\n';
+  }
 }
 
 void SmartLogger::recordLogsIfNeeded(const std::string &logs)
 {
   if (!mRecord)
     return;
-  std::lock_guard<std::mutex> lock(mLogMutex);
   auto recorder = SafeRecorder::getInstance();
+  if (!recorder)
+  {
+    throw std::runtime_error("Saferecorder instance returned a NULL \n");
+  }
   recorder->log(logs);
 }
 

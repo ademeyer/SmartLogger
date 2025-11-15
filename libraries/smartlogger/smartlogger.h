@@ -7,11 +7,11 @@
 #include <string_view>
 #include <chrono>
 #include <mutex>
+#include <stdexcept>
 #include "saferecorder.h"
 
 // Initialize static members
 std::unique_ptr<SafeRecorder> SafeRecorder::mInstance;
-// std::mutex SafeRecorder::mLogMutex;
 
 /*
          foreground background
@@ -67,21 +67,23 @@ public:
   void Fatal(Args &&...args);
 
 private:
-  // const SafeRecorder* mRecorder = SafeRecorder::getInstance();
+  /* Class Private Data */
+  bool mRecord;
   std::mutex mLogMutex;
   const std::array<LogStat, 5> mLogSettings{
       LogStat({std::string("INFO"), 32}),
       LogStat({std::string("DEBUG"), 37}),
       LogStat({std::string("WARN"), 33}),
-      LogStat({std::string("ERROR"), 31}),
+      LogStat({std::string("ERROR"), 35}),
       LogStat({std::string("FATAL"), 31}),
   };
+  /* Class Private Fuctions */
   template <typename... Args>
   void printHelper(const LogLevel &loglevel, Args &&...args);
-  const std::string updatePrintSetting(const LogLevel &);
-  std::string getDateAndTime();
+  const std::string updatePrintColor(const LogLevel &) const;
+  std::string getDateAndTime() const;
+  std::string getLogName(const LogLevel &ll) const;
   void recordLogsIfNeeded(const std::string &);
-  bool mRecord;
 };
 // This is manually include because linker error with template class
 #include "smartlogger.cpp"
