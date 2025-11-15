@@ -6,11 +6,12 @@
 #include <sstream>
 #include <string_view>
 #include <chrono>
+#include <mutex>
 #include "saferecorder.h"
 
 // Initialize static members
 std::unique_ptr<SafeRecorder> SafeRecorder::mInstance;
-std::mutex SafeRecorder::mLogMutex;
+// std::mutex SafeRecorder::mLogMutex;
 
 /*
          foreground background
@@ -34,53 +35,54 @@ inverse off      27
 
 */
 
-enum class LogLevel {
-    INFO,
-    DEBUG,
-    WARN,
-    ERROR,
-    FATAL,
-    RESET
+enum class LogLevel
+{
+  INFO,
+  DEBUG,
+  WARN,
+  ERROR,
+  FATAL,
+  RESET
 };
 
 struct LogStat
 {
-    const std::string logLevelName;
-    int color;
+  const std::string logLevelName;
+  int color;
 };
 
 class SmartLogger
 {
 public:
-    void EnableRecord(bool record);
-    template<class... Args>
-    void Info(const Args&... args);
-    template<class... Args>
-    void Debug(const Args&... args);
-    template<class... Args>
-    void Warn(const Args&... args);
-    template<class... Args>
-    void Error(const Args&... args);
-    template<class... Args>
-    void Fatal(const Args&... args);
+  void EnableRecord(bool record);
+  template <typename... Args>
+  void Info(Args &&...args);
+  template <typename... Args>
+  void Debug(Args &&...args);
+  template <typename... Args>
+  void Warn(Args &&...args);
+  template <typename... Args>
+  void Error(Args &&...args);
+  template <typename... Args>
+  void Fatal(Args &&...args);
 
 private:
-    //const SafeRecorder* mRecorder = SafeRecorder::getInstance();
-    const std::array<LogStat, 5> mLogSettings{
-        LogStat({std::string("INFO"), 32}),
-        LogStat({std::string("DEBUG"), 37}),
-        LogStat({std::string("WARN"), 33}),
-        LogStat({std::string("ERROR"), 31}),
-        LogStat({std::string("FATAL"), 31}),
-    };
-    template<class... Args>
-    std::string printHelper(const Args&... args);
-    const std::string updatePrintSetting(const LogLevel&);
-    std::string getDateAndTime();
-    void recordLogsIfNeeded(const std::string&);
-    bool mRecord;
+  // const SafeRecorder* mRecorder = SafeRecorder::getInstance();
+  std::mutex mLogMutex;
+  const std::array<LogStat, 5> mLogSettings{
+      LogStat({std::string("INFO"), 32}),
+      LogStat({std::string("DEBUG"), 37}),
+      LogStat({std::string("WARN"), 33}),
+      LogStat({std::string("ERROR"), 31}),
+      LogStat({std::string("FATAL"), 31}),
+  };
+  template <typename... Args>
+  void printHelper(const LogLevel &loglevel, Args &&...args);
+  const std::string updatePrintSetting(const LogLevel &);
+  std::string getDateAndTime();
+  void recordLogsIfNeeded(const std::string &);
+  bool mRecord;
 };
-
 // This is manually include because linker error with template class
 #include "smartlogger.cpp"
 #endif
