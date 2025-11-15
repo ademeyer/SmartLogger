@@ -1,37 +1,41 @@
 #ifndef __SAFERECORDER_H_
 #define __SAFERECORDER_H_
 #include <thread>
-#include <mutex>
 #include <fstream>
 #include <iomanip>
 #include <memory>
 
 #define FileName "../../../app_log.txt"
-class SafeRecorder {
+class SafeRecorder
+{
 public:
-    ~SafeRecorder();
-    void log(const std::string&);
-    static SafeRecorder* getInstance()
+  ~SafeRecorder();
+  void log(const std::string &);
+  static SafeRecorder *getInstance()
+  {
+    if (mInstance == nullptr)
     {
-        std::lock_guard<std::mutex> lock(mLogMutex);
-        if(mInstance == nullptr)
-        {
-            mInstance = std::unique_ptr<SafeRecorder>(new SafeRecorder(FileName));
-        }
-        return mInstance.get();
+      mInstance = std::unique_ptr<SafeRecorder>(new SafeRecorder(FileName));
     }
+    return mInstance.get();
+  }
+
 private:
-    // delete copy constructor
-    SafeRecorder(const SafeRecorder&) = delete;
-    // delete assignment operator
-    SafeRecorder& operator= (const SafeRecorder&) = delete;
+  // delete copy constructor
+  SafeRecorder(const SafeRecorder &) = delete;
+  // delete move constructor
+  SafeRecorder(SafeRecorder &&) = delete;
+  // delete copy assignment operator
+  SafeRecorder &operator=(const SafeRecorder &) = delete;
+  // delete move assignment operator
+  SafeRecorder &operator=(SafeRecorder &&) = delete;
+  // delete swap/copy assignment operator
+  SafeRecorder &operator=(SafeRecorder) = delete;
 
-    SafeRecorder(const std::string& fileName);
+  SafeRecorder(const std::string &fileName);
 
-    static std::unique_ptr<SafeRecorder> mInstance;
-    static std::mutex mLogMutex;
-    std::ofstream mLogFile;
-    
+  static std::unique_ptr<SafeRecorder> mInstance;
+  std::ofstream mLogFile;
 };
 
 #endif
