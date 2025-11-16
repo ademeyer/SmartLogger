@@ -1,5 +1,6 @@
 #ifndef __SMARTLOGGER_H__
 #define __SMARTLOGGER_H__
+
 #include <array>
 #include <iostream>
 #include <format>
@@ -8,6 +9,7 @@
 #include <chrono>
 #include <mutex>
 #include <stdexcept>
+#include <concepts>
 #include "saferecorder.h"
 
 // Initialize static members
@@ -51,19 +53,32 @@ struct LogStat
   int color;
 };
 
+template <typename T>
+concept Loggable = (std::convertible_to<T, std::string>) ||
+                   (std::integral<T>) || (std::floating_point<T>) ||
+                   (std::same_as<T, std::string>) || (std::same_as<T, const char *>);
+
+template <typename... Args>
+concept LogArgs = requires() { requires(Loggable<Args> && ...); };
+
 class SmartLogger
 {
 public:
   void EnableRecord(bool record);
-  template <typename... Args>
+
+  template <LogArgs... Args>
   void Info(Args &&...args);
-  template <typename... Args>
+
+  template <LogArgs... Args>
   void Debug(Args &&...args);
-  template <typename... Args>
+
+  template <LogArgs... Args>
   void Warn(Args &&...args);
-  template <typename... Args>
+
+  template <LogArgs... Args>
   void Error(Args &&...args);
-  template <typename... Args>
+
+  template <LogArgs... Args>
   void Fatal(Args &&...args);
 
 private:
